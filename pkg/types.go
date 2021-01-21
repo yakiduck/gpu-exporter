@@ -23,6 +23,9 @@ import (
 	"text/template"
 
 	"github.com/NVIDIA/gpu-monitoring-tools/bindings/go/dcgm"
+
+	"k8s.io/client-go/informers"
+	v1lister "k8s.io/client-go/listers/core/v1"
 )
 
 var (
@@ -55,6 +58,7 @@ type Config struct {
 
 type Transform interface {
 	Process(metrics [][]Metric) error
+	K8sProcess() ([]ContainerMetric, error)
 	Name() string
 }
 
@@ -71,6 +75,7 @@ type MetricsPipeline struct {
 type DCGMCollector struct {
 	Counters     []Counter
 	DeviceFields []dcgm.Short
+	DeviceList   []dcgm.Device
 	Cleanups     []func()
 }
 
@@ -90,6 +95,19 @@ type Metric struct {
 	GPUDevice string
 
 	Attributes map[string]string
+}
+
+type ContainerMetric struct {
+	Name  string
+	Value string
+
+	GPU       string
+	GPUUUID   string
+	GPUDevice string
+
+	Namespace string
+	Pod       string
+	Container string
 }
 
 func (m Metric) getIDOfType(idType KubernetesGPUIDType) (string, error) {
@@ -125,4 +143,11 @@ type PodInfo struct {
 	Name      string
 	Namespace string
 	Container string
+}
+
+type CgroupMapper struct {
+	DeviceList []dcgm.Device
+	PodLister  v1lister.PodLister
+	// SharedInformers gives access to informers for the controller.
+	SharedInformers informers.SharedInformerFactory
 }

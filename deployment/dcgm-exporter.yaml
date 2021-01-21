@@ -34,13 +34,20 @@ spec:
         app.kubernetes.io/version: "2.1.1"
       name: "dcgm-exporter"
     spec:
+      serviceAccount: dcgm-exporter
+      nodeSelector:
+        nvidia-device-enable: "enable"
       containers:
-      - image: "nvidia/dcgm-exporter:2.0.13-2.1.1-ubuntu18.04"
+      - image: "xiekeyang/nvidia-dcgm-exporter:latest"
         env:
         - name: "DCGM_EXPORTER_LISTEN"
           value: ":9400"
         - name: "DCGM_EXPORTER_KUBERNETES"
           value: "true"
+        - name: "NODE_NAME"
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
         name: "dcgm-exporter"
         ports:
         - name: "metrics"
